@@ -2,12 +2,18 @@ const plugins = require('next-compose-plugins')
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
-
 const withOffline = require('next-offline')
 
+const isExport = process.env.NEXT_EXPORT === 'true' || process.env.EXPORT === 'true'
+const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] || ''
+
 const nextConfig = {
+  output: 'export',
+  images: { unoptimized: true },
+  trailingSlash: true,
+  basePath: process.env.NODE_ENV === 'production' ? `/${repoName}` : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? `/${repoName}/` : '',
   webpack(config, { isServer }) {
-    // audio support
     config.module.rules.push({
       test: /\.(ogg|mp3|wav|mpe?g)$/i,
       exclude: config.exclude,
@@ -17,16 +23,15 @@ const nextConfig = {
           options: {
             limit: config.inlineImageLimit,
             fallback: require.resolve('file-loader'),
-            publicPath: `${config.assetPrefix}/_next/static/images/`,
+            publicPath: `${config.assetPrefix || ''}/_next/static/images/`,
             outputPath: `${isServer ? '../' : ''}static/images/`,
             name: '[name]-[hash].[ext]',
-            esModule: config.esModule || false,
+            esModule: false,
           },
         },
       ],
     })
 
-    // shader support
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
       exclude: /node_modules/,
@@ -37,8 +42,7 @@ const nextConfig = {
   },
 }
 
-// manage i18n
-if (process.env.EXPORT !== 'true') {
+if (!isExport) {
   nextConfig.i18n = {
     locales: ['en-US'],
     defaultLocale: 'en-US',
@@ -47,22 +51,18 @@ if (process.env.EXPORT !== 'true') {
 
 module.exports = plugins(
   [
-    [
+    !isExport && [
       withOffline,
       {
         workboxOpts: {
-          swDest: process.env.NEXT_EXPORT
-            ? 'service-worker.js'
-            : 'static/service-worker.js',
+          swDest: isExport ? 'service-worker.js' : 'static/service-worker.js',
           runtimeCaching: [
             {
               urlPattern: /^https?.*/,
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'offlineCache',
-                expiration: {
-                  maxEntries: 200,
-                },
+                expiration: { maxEntries: 200 },
               },
             },
           ],
@@ -78,6 +78,6 @@ module.exports = plugins(
       },
     ],
     withBundleAnalyzer,
-  ],
+  ].filter(Boolean),
   nextConfig
 )
