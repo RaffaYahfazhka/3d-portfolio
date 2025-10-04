@@ -72,13 +72,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        run: |
+          if [ -z "${{ steps.detect-package-manager.outputs.manager }}" ]; then
+            echo "::error::Package manager not detected."
+            exit 1
+          fi
+          ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+      
       - name: Build with Next.js
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
+        run: |
+          ${{ steps.detect-package-manager.outputs.runner }} next build || {
+            echo "::error::Next.js build failed"
+            exit 1
+          }
+      
+      - name: Export static site
+        run: ${{ steps.detect-package-manager.outputs.runner }} next export
 
   # Deployment job
   deploy:
