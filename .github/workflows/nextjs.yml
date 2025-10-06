@@ -17,7 +17,7 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: 1
   BROWSERSLIST_IGNORE_OLD_DATA: 1
-  EXPORT: 'true' # aktifkan mode export pada next.config.js
+  EXPORT: 'true'
   REPO_NAME: 3d-portfolio
 
 jobs:

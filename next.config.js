@@ -4,30 +4,30 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 })
 const withOffline = require('next-offline')
 
-/** === Tambahan: flag & helper untuk mode export (GH Pages) === */
-const isExport = process.env.EXPORT === 'true' // konsisten dengan i18n gate-mu
-const repo = process.env.REPO_NAME || ''       // isi di workflow (nama repo)
-const explicitBase = process.env.BASE_PATH || '' // opsional override, mis. "/my-repo"
+// ========= Flag & helper untuk mode export (Pages) =========
+const isExport = process.env.EXPORT === 'true'      // aktifkan di CI saat deploy Pages
+const repo = process.env.REPO_NAME || ''            // isi di CI; contoh: "my-portfolio"
+const explicitBase = process.env.BASE_PATH || ''    // opsional override, contoh: "/my-portfolio"
 const basePath = isExport ? (explicitBase || (repo ? `/${repo}` : '')) : ''
 const assetPrefix = isExport ? `${basePath}/` : ''
 
 const nextConfig = {
-  /** === Tambahan aman untuk debugging prod crash === */
+  // Debug prod runtime
   productionBrowserSourceMaps: true,
 
-  /** === Tambahan: konfigurasi khusus saat EXPORT === */
+  // Khusus saat export ke GitHub Pages
   ...(isExport
     ? {
-        output: 'export',                 // hasil ke folder out/
-        images: { unoptimized: true },    // wajib untuk static export
-        trailingSlash: true,              // aman untuk GH Pages
+        output: 'export',              // hasil build ke folder out/
+        images: { unoptimized: true }, // wajib untuk export statis
+        trailingSlash: true,
         basePath,
         assetPrefix,
       }
     : {}),
 
   webpack(config, { isServer }) {
-    // audio support (tetap, tidak diubah)
+    // audio support (dipertahankan)
     config.module.rules.push({
       test: /\.(ogg|mp3|wav|mpe?g)$/i,
       exclude: config.exclude,
@@ -46,7 +46,7 @@ const nextConfig = {
       ],
     })
 
-    // shader support (tetap, tidak diubah)
+    // shader support (dipertahankan)
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
       exclude: /node_modules/,
@@ -57,7 +57,7 @@ const nextConfig = {
   },
 }
 
-/** manage i18n (tetap) */
+// manage i18n (dipertahankan)
 if (process.env.EXPORT !== 'true') {
   nextConfig.i18n = {
     locales: ['en-US'],
@@ -65,39 +65,41 @@ if (process.env.EXPORT !== 'true') {
   }
 }
 
-module.exports = plugins(
-  [
-    [
-      withOffline,
-      {
-        workboxOpts: {
-          swDest: process.env.NEXT_EXPORT
-            ? 'service-worker.js'
-            : 'static/service-worker.js',
-          runtimeCaching: [
-            {
-              urlPattern: /^https?.*/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'offlineCache',
-                expiration: {
-                  maxEntries: 200,
+// ====== Susun plugin: saat EXPORT, JANGAN muat withOffline ======
+const pluginArray = [
+  ...(isExport
+    ? [] // <-- service worker dimatikan khusus export
+    : [
+        [
+          withOffline,
+          {
+            workboxOpts: {
+              swDest: process.env.NEXT_EXPORT
+                ? 'service-worker.js'
+                : 'static/service-worker.js',
+              runtimeCaching: [
+                {
+                  urlPattern: /^https?.*/,
+                  handler: 'NetworkFirst',
+                  options: {
+                    cacheName: 'offlineCache',
+                    expiration: { maxEntries: 200 },
+                  },
                 },
-              },
+              ],
             },
-          ],
-        },
-        async rewrites() {
-          return [
-            {
-              source: '/service-worker.js',
-              destination: '/_next/static/service-worker.js',
+            async rewrites() {
+              return [
+                {
+                  source: '/service-worker.js',
+                  destination: '/_next/static/service-worker.js',
+                },
+              ]
             },
-          ]
-        },
-      },
-    ],
-    withBundleAnalyzer,
-  ],
-  nextConfig
-)
+          },
+        ],
+      ]),
+  withBundleAnalyzer,
+]
+
+module.exports = plugins(pluginArray, nextConfig)
