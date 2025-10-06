@@ -1,6 +1,6 @@
 // next.config.js
 const isProd = process.env.NODE_ENV === 'production';
-const repo = 'nama-repo-kamu'; // ganti jika pakai project page
+const repo = '3d-portfolio'; // ganti jika pakai project page
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
