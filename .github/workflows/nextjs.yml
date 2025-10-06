@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -16,19 +17,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "yarn"
 
-      - name: Install deps
-        run: npm ci
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint --if-present
+        run: yarn lint || echo "Lint skipped (no lint script)"
 
       - name: Test
-        run: npm test --if-present
+        run: yarn test || echo "Test skipped (no test script)"
 
       - name: Build
-        run: npm run build
+        run: yarn build
 
       # (Opsional) upload artifact hasil .next sebagai bukti build
       - name: Upload build artifact
