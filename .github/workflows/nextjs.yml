@@ -36,7 +36,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Update Browserslist DB (quiet)
-        run: npx --yes update-browserslist-db@latest
+        run: npx --yes update-browserslist-db@latest || true
 
       - name: Lint
         run: yarn lint || echo "Lint skipped (no lint script)"
@@ -44,17 +44,26 @@ jobs:
       - name: Test
         run: yarn test || echo "Test skipped (no test script)"
 
-      # Cache build Next.js biar lebih cepat (opsional)
-      - name: Cache Next.js build cache
-        uses: actions/cache@v4
-        with:
-          path: .next/cache
-          key: ${{ runner.os }}-nextcache-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-nextcache-
-
       - name: Build (includes static export)
         run: yarn build
+
+      # Debug: cek apakah folder out sudah ada
+      - name: Show build result
+        run: |
+          ls -la
+          echo "---- .next ----"
+          ls -la .next || true
+          echo "---- out ----"
+          ls -la out || true
+
+      # Guard: kalau out/ belum ada (mis. script build belum export), coba export lagi
+      - name: Ensure out/ exists
+        run: |
+          if [ ! -d "out" ]; then
+            echo "out/ not found. Running 'yarn export'..."
+            yarn export
+          fi
+          test -d out
 
       - name: Upload Pages artifact (./out)
         uses: actions/upload-pages-artifact@v3
