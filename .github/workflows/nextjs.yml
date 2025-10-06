@@ -2,7 +2,7 @@ name: CI & Deploy (GitHub Pages)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -11,12 +11,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: true
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
   BROWSERSLIST_IGNORE_OLD_DATA: 1
+  EXPORT: 'true' # aktifkan mode export pada next.config.js
+  REPO_NAME: 3d-portfolio
 
 jobs:
   build:
@@ -30,7 +32,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "yarn"
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
