@@ -11,7 +11,7 @@ const nextConfig = {
   assetPrefix: isProd ? `/${repo}/` : '',
   productionBrowserSourceMaps: true,
   webpack(config, { isServer }) {
-    config.module.rules.push({
+    config.module.rules.push({ 
       test: /\.(glsl|vs|fs|vert|frag)$/i,
       use: ['raw-loader', 'glslify-loader'],
     })
