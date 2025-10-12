@@ -1,77 +1,79 @@
-const plugins = require('next-compose-plugins')
+// next.config.js
+const withPlugins = require('next-compose-plugins');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
-})
+});
+const withOffline = require('next-offline');
 
-const withOffline = require('next-offline')
+const isProd = process.env.NODE_ENV === 'production';
+const isExport = process.env.NEXT_EXPORT === 'true' || process.env.EXPORT === 'true';
 
-const isProd = process.env.NODE_ENV === 'production'
-const repo = '3d-portfolio'
+// Ganti sesuai nama repo GitHub Pages kamu
+const repo = '3d-portfolio';
 
 const nextConfig = {
+  // ==== Static export untuk GitHub Pages ====
   output: 'export',
   reactStrictMode: true,
+
+  // Gambar di GHPages harus unoptimized
   images: { unoptimized: true },
+
+  // Base path & asset prefix untuk subpath GHPages: https://<user>.github.io/<repo>/
   basePath: isProd ? `/${repo}` : '',
-  assetPrefix: isProd ? `/${repo}/` : '',
+  assetPrefix: isProd ? `/${repo}` : '',
+
+  // Biar gampang referensikan asset di /public dengan prefix basePath
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isProd ? `/${repo}` : '',
+  },
+
   productionBrowserSourceMaps: true,
-  webpack(config, { isServer }) {
-    // audio support
+
+  webpack(config) {
+    // === Audio (ogg/mp3/wav/mpeg) pakai Asset Modules ===
     config.module.rules.push({
       test: /\.(ogg|mp3|wav|mpe?g)$/i,
-      exclude: config.exclude,
-      use: [
-        {
-          loader: require.resolve('url-loader'),
-          options: {
-            limit: config.inlineImageLimit,
-            fallback: require.resolve('file-loader'),
-            publicPath: `${config.assetPrefix}/_next/static/images/`,
-            outputPath: `${isServer ? '../' : ''}static/images/`,
-            name: '[name]-[hash].[ext]',
-            esModule: config.esModule || false,
-          },
-        },
-      ],
-    })
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/media/[name]-[hash][ext]',
+      },
+    });
 
-    // shader support
+    // === Shader (glsl|vert|frag|vs|fs) sebagai source string ===
     config.module.rules.push({
-      test: /\.(glsl|vs|fs|vert|frag)$/,
-      exclude: /node_modules/,
-      use: ['raw-loader', 'glslify-loader'],
-    })
+      test: /\.(glsl|vs|fs|vert|frag)$/i,
+      type: 'asset/source',
+    });
 
-    return config
+    return config;
   },
-}
+};
 
-// manage i18n
-if (process.env.EXPORT !== 'true') {
+// i18n TIDAK boleh aktif saat export
+if (!isExport) {
   nextConfig.i18n = {
     locales: ['en-US'],
     defaultLocale: 'en-US',
-  }
+  };
 }
 
-module.exports = plugins(
-  [
+// Plugin disusun kondisional: offline dimatikan saat export
+const plugins = [
+  // Aktifkan offline HANYA saat bukan export (SSR build)
+  !isExport &&
     [
       withOffline,
       {
         workboxOpts: {
-          swDest: process.env.NEXT_EXPORT
-            ? 'service-worker.js'
-            : 'static/service-worker.js',
+          swDest: 'static/service-worker.js',
           runtimeCaching: [
             {
               urlPattern: /^https?.*/,
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'offlineCache',
-                expiration: {
-                  maxEntries: 200,
-                },
+                expiration: { maxEntries: 200 },
               },
             },
           ],
@@ -82,11 +84,11 @@ module.exports = plugins(
               source: '/service-worker.js',
               destination: '/_next/static/service-worker.js',
             },
-          ]
+          ];
         },
       },
     ],
-    withBundleAnalyzer,
-  ],
-  nextConfig
-)
+  withBundleAnalyzer,
+].filter(Boolean);
+
+module.exports = withPlugins(plugins, nextConfig);
