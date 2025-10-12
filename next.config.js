@@ -9,17 +9,16 @@ const isProd = process.env.NODE_ENV === 'production'
 const repo = '3d-portfolio'
 
 const nextConfig = {
-   output: 'export',
-    reactStrictMode: true,
+  output: 'export',
+  reactStrictMode: true,
   images: { unoptimized: true },
-  trailingSlash: true,
   basePath: isProd ? `/${repo}` : '',
   assetPrefix: isProd ? `/${repo}/` : '',
   productionBrowserSourceMaps: true,
   webpack(config, { isServer }) {
     // audio support
     config.module.rules.push({
-      test: /\.(ogg|mp3|wav|mpe?g|glsl|vs|fs|vert|frag)$/i,
+      test: /\.(ogg|mp3|wav|mpe?g)$/i,
       exclude: config.exclude,
       use: [
         {
