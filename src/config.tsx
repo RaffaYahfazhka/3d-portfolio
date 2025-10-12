@@ -33,7 +33,7 @@ const Header = ({ title = titleDefault }) => {
         <meta name='og:title' content={title} />
         <meta name='og:type' content='site' />
         <meta name='og:url' content={url} />
-        <meta name='og:image' content={'./icons/thumbnail.jpg'} />
+        <meta name='og:image' content={'/icons/thumbnail.jpg'} />
         <meta name='og:site_name' content='3D Portfolio' />
         <meta name='og:description' content={description} />
 
@@ -41,7 +41,7 @@ const Header = ({ title = titleDefault }) => {
         <link
           rel='mask-icon'
           color='#000000'
-          href='./icons/safari-pinned-tab.svg'
+          href='/icons/safari-pinned-tab.svg'
         />
         <link rel='apple-touch-startup-image' href='/startup.png' />
 
@@ -53,7 +53,7 @@ const Header = ({ title = titleDefault }) => {
           content='width=device-width, minimum-scale=1, initial-scale=1.0'
         />
         <meta name='theme-color' content='#000' />
-        <link rel='shortcut icon' href='./icons/favicon.ico' />
+        <link rel='shortcut icon' href='/icons/favicon.ico' />
 
         {/* 
       Twitter Summary card
